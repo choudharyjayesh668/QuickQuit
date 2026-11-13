@@ -28,7 +28,7 @@
 <!-- Describe what you ran and what you checked by hand. -->
 
 - [ ] `./build.sh` succeeds
-- [ ] `./test.sh` passes
+- [ ] `npm test` passes
 - [ ] Tested by hand (describe below)
 
 macOS version:

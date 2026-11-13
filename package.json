@@ -1,8 +1,7 @@
 {
   "name": "quickquit",
   "version": "1.0.0",
-  "private": true,
-  "description": "A tiny native macOS utility that asks your open Dock apps to quit with Control+Shift+Q.",
+  "description": "A tiny native macOS utility that asks your open Dock apps to quit with Control+Shift+Q. Never force-quits.",
   "keywords": [
     "macos",
     "swift",
@@ -24,14 +23,25 @@
   "os": [
     "darwin"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "quickquit": "bin/quickquit.js"
+  },
   "files": [
+    "bin/",
+    "lib/",
+    "scripts/",
     "Sources/",
-    "build.sh",
-    "Install QuickQuit.command",
-    "Uninstall QuickQuit.command"
+    "build.sh"
   ],
   "scripts": {
     "build": "./build.sh",
-    "test": "./test.sh"
+    "test": "npm run test:swift && npm run test:cli",
+    "test:swift": "./test.sh",
+    "test:cli": "node --test Tests/cli.test.js",
+    "postinstall": "node scripts/postinstall.js",
+    "prepublishOnly": "npm test"
   }
 }

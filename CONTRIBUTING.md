@@ -49,8 +49,9 @@ You need:
 - macOS 13 or newer
 - Apple Command Line Tools with a Swift 6 compiler (`xcode-select --install`). Full Xcode is not required.
 - Git
+- [Node.js](https://nodejs.org/) 18 or newer, to run the tests of the `quickquit` command
 
-There are no third-party dependencies and nothing to install with a package manager.
+There are no third-party dependencies, so there is nothing to download with `npm install`.
 
 Check your tools:
 
@@ -63,10 +64,17 @@ Build and test:
 
 ```sh
 ./build.sh    # creates build/QuickQuit.app
-./test.sh     # compiles and runs the unit tests
+npm test      # runs the Swift unit tests and the command-line unit tests
 ```
 
-If you have Node.js installed, `npm run build` and `npm test` run the same two scripts. Node.js is optional.
+`npm test` runs two suites, which you can also run on their own:
+
+```sh
+./test.sh            # Swift unit tests for the quit policy (needs no Node.js)
+npm run test:cli     # unit tests for the quickquit command and the npm postinstall step
+```
+
+Neither suite installs, launches, or removes anything on your Mac. Running `npm install` inside the repository does not set up the app either: the `postinstall` step only acts on a global install (`npm install -g`).
 
 To try your build without installing it:
 
@@ -103,7 +111,7 @@ Only one copy of QuickQuit runs at a time. If you have an installed copy, a seco
 
    ```sh
    ./build.sh
-   ./test.sh
+   npm test
    ```
 
 6. **Update the documentation** if behavior, installation, or usage changed, and add a line to the `Unreleased` section of [CHANGELOG.md](CHANGELOG.md) for anything users will notice.
@@ -180,19 +188,44 @@ Shell scripts:
 - Scripts must pass [ShellCheck](https://www.shellcheck.net/). CI runs it; to run it locally, install it (for example with `brew install shellcheck`) and run:
 
   ```sh
-  shellcheck build.sh test.sh "Install QuickQuit.command" "Uninstall QuickQuit.command"
+  shellcheck build.sh test.sh scripts/install.sh scripts/uninstall.sh \
+    "Install QuickQuit.command" "Uninstall QuickQuit.command"
   ```
+
+- Installation logic lives only in `scripts/install.sh` and `scripts/uninstall.sh`. The `.command` files and the `quickquit` command are thin wrappers around them; do not duplicate the logic there.
+- The install and uninstall scripts must stay safe to run repeatedly and must never need `sudo`.
+
+JavaScript (the `quickquit` command):
+
+- Plain Node.js with no dependencies, written in CommonJS, and compatible with Node.js 18.
+- Indent with 4 spaces.
+- Code that touches the system goes through the `deps` object in `lib/quickquit.js`, so that it can be replaced in tests.
+- The `postinstall` step must do nothing unless the install is global, on macOS, and not running as root.
 
 The [.editorconfig](.editorconfig) file sets indentation and line endings for editors that support it. The project has no automatic code formatter.
 
 ## Testing requirements
 
-- `./build.sh` and `./test.sh` must both succeed before you open a pull request.
+- `./build.sh` and `npm test` must both succeed before you open a pull request.
 - Add or update unit tests in `Tests/main.swift` when you change which apps are asked to quit.
-- The unit tests cover the quit policy only. The global shortcut, the installer, the uninstaller, and the LaunchAgent have no automated tests, so if you change them, test them by hand and describe what you did in the pull request.
-- Never test the shortcut while unsaved work is open.
+- Add or update unit tests in `Tests/cli.test.js` when you change the `quickquit` command or the `postinstall` step.
+- If you change the install or uninstall scripts, test them on your own Mac and describe what you did in the pull request. To test the npm route the way a user gets it:
 
-CI runs on every pull request. It lints the shell scripts, runs the unit tests, builds the app with warnings treated as errors, and verifies the app bundle on macOS 15 (Apple silicon and Intel) and macOS 26.
+  ```sh
+  npm pack
+  npm install -g ./quickquit-*.tgz --foreground-scripts
+  quickquit status
+  quickquit uninstall
+  npm uninstall -g quickquit
+  ```
+
+- The global shortcut has no automated test. Never test it while unsaved work is open.
+
+CI runs on every pull request, on macOS 15 (Apple silicon and Intel) and macOS 26. It:
+
+- lints the shell scripts and runs the command-line unit tests on Node.js 18;
+- runs all unit tests, builds the app with warnings treated as errors, and verifies the app bundle;
+- installs the packed npm package globally, checks that QuickQuit is running, installs it a second time to check that nothing is duplicated, and then checks that `quickquit uninstall` removes everything.
 
 ## Submitting a pull request
 
@@ -239,7 +272,7 @@ The project's own AI usage is disclosed in the [README](README.md#ai-usage-discl
 
 QuickQuit follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`.
 
-- The version number lives in the `version` field of [package.json](package.json). `build.sh` reads it and writes it into the app's `Info.plist`.
+- The version number lives in the `version` field of [package.json](package.json). `build.sh` reads it and writes it into the app's `Info.plist`, and it is also the version of the npm package.
 - Notable changes are recorded in [CHANGELOG.md](CHANGELOG.md).
 - Contributors should not change the version number. The maintainer does that when preparing a release.
 
@@ -247,10 +280,12 @@ Release steps for the maintainer:
 
 1. Update `version` in `package.json` and move the `Unreleased` entries in `CHANGELOG.md` under the new version and date.
 2. Build on a supported Mac, then test installation, start at login, relaunch, shortcut registration, and uninstallation with all important work saved.
-3. Commit, tag the commit `vMAJOR.MINOR.PATCH`, and push the tag.
-4. Publish a GitHub release with notes that state the supported macOS versions and known limitations.
+3. Check what would be published with `npm pack --dry-run`. Only `Sources/`, `scripts/`, `bin/`, `lib/`, `build.sh`, `package.json`, the README, and the license should be listed.
+4. Commit, tag the commit `vMAJOR.MINOR.PATCH`, and push the tag.
+5. Publish a GitHub release with notes that state the supported macOS versions and known limitations.
+6. Publish to npm with `npm publish`. The `prepublishOnly` script runs the tests first and stops the publish if they fail. After the first publish, remove the "Not on the npm registry yet" note from the README.
 
-QuickQuit is not published on npm, and `package.json` is marked `private` so it cannot be published by accident. Builds are ad-hoc signed and must not be described as notarized or Apple-approved.
+Only the maintainer publishes releases and npm packages. Builds are ad-hoc signed and must not be described as notarized or Apple-approved.
 
 ## License
 

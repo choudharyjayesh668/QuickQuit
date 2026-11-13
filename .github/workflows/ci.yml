@@ -22,16 +22,27 @@ jobs:
         uses: actions/checkout@v7
       - name: Check shell syntax
         run: |
-          for script in build.sh test.sh "Install QuickQuit.command" "Uninstall QuickQuit.command"; do
+          for script in build.sh test.sh scripts/install.sh scripts/uninstall.sh \
+            "Install QuickQuit.command" "Uninstall QuickQuit.command"; do
             bash -n "$script"
           done
       - name: Run ShellCheck
-        run: shellcheck build.sh test.sh "Install QuickQuit.command" "Uninstall QuickQuit.command"
+        run: |
+          shellcheck build.sh test.sh scripts/install.sh scripts/uninstall.sh \
+            "Install QuickQuit.command" "Uninstall QuickQuit.command"
       - name: Check scripts are executable
         run: |
-          for script in build.sh test.sh "Install QuickQuit.command" "Uninstall QuickQuit.command"; do
+          for script in build.sh test.sh scripts/install.sh scripts/uninstall.sh bin/quickquit.js \
+            "Install QuickQuit.command" "Uninstall QuickQuit.command"; do
             test -x "$script" || { echo "::error file=$script::$script is not executable"; exit 1; }
           done
+      # Node.js 18 is the oldest version package.json claims to support.
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v7
+        with:
+          node-version: 18
+      - name: Run command-line unit tests on Node.js 18
+        run: npm run test:cli
       - name: Validate package.json and its file list
         run: npm pack --dry-run
 
@@ -52,8 +63,10 @@ jobs:
           sw_vers
           uname -m
           swift --version
-      - name: Run unit tests
-        run: ./test.sh
+          node --version
+          npm --version
+      - name: Run Swift and command-line unit tests
+        run: npm test
       - name: Build QuickQuit
         run: ./build.sh
       - name: Validate app metadata and signature
@@ -68,3 +81,58 @@ jobs:
           test "$expected" = "$actual"
           vtool -show-build build/QuickQuit.app/Contents/MacOS/QuickQuit | tee build-version.txt
           grep -Eq 'minos 13\.0$' build-version.txt
+
+  npm-install:
+    name: npm install -g (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, macos-26]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+      - name: Pack the npm package
+        run: npm pack
+      - name: Install globally from the tarball
+        run: npm install -g ./quickquit-*.tgz --foreground-scripts
+      - name: QuickQuit is installed, loaded, and running
+        run: |
+          quickquit status
+          test "$(pgrep -x QuickQuit | wc -l | tr -d ' ')" = 1
+          test -f "$HOME/Library/LaunchAgents/local.quickquit.QuickQuit.plist"
+      - name: Installing again leaves one app, one LaunchAgent, and one process
+        run: |
+          npm install -g ./quickquit-*.tgz --foreground-scripts
+          quickquit status
+          test "$(pgrep -x QuickQuit | wc -l | tr -d ' ')" = 1
+          test "$(find "$HOME/Library/LaunchAgents" -iname '*quickquit*' | wc -l | tr -d ' ')" = 1
+          apps=0
+          for dir in /Applications "$HOME/Applications"; do
+            if [ -e "$dir/QuickQuit.app" ]; then apps=$((apps + 1)); fi
+          done
+          test "$apps" = 1
+      - name: quickquit uninstall removes the app and the LaunchAgent
+        run: |
+          quickquit uninstall
+          if pgrep -x QuickQuit; then echo "::error::QuickQuit is still running"; exit 1; fi
+          test ! -e /Applications/QuickQuit.app
+          test ! -e "$HOME/Applications/QuickQuit.app"
+          test ! -e "$HOME/Library/LaunchAgents/local.quickquit.QuickQuit.plist"
+          if quickquit status; then echo "::error::status should report not installed"; exit 1; fi
+      - name: quickquit uninstall is safe to repeat
+        run: quickquit uninstall
+      - name: quickquit install sets it up again
+        run: |
+          quickquit install
+          quickquit status
+          test "$(pgrep -x QuickQuit | wc -l | tr -d ' ')" = 1
+      - name: Clean up
+        if: always()
+        run: |
+          quickquit uninstall || true
+          npm uninstall -g quickquit || true

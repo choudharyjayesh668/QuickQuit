@@ -22,7 +22,7 @@ body:
       label: Steps to reproduce
       description: List every step, starting from a state anyone can get to.
       placeholder: |
-        1. Install QuickQuit with "Install QuickQuit.command"
+        1. Install QuickQuit with "npm install -g quickquit"
         2. Open ...
         3. Press Control+Shift+Q
         4. See ...
@@ -64,15 +64,26 @@ body:
     id: version
     attributes:
       label: QuickQuit version
-      description: "Run `defaults read /Applications/QuickQuit.app/Contents/Info CFBundleShortVersionString`, or give the commit hash you installed from."
+      description: "Run `quickquit status` (npm) or `defaults read /Applications/QuickQuit.app/Contents/Info CFBundleShortVersionString`, or give the commit hash you installed from."
       placeholder: "For example: 1.0.0 or commit abc1234"
+    validations:
+      required: true
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install QuickQuit?
+      options:
+        - npm (npm install -g quickquit)
+        - Install QuickQuit.command
+        - Built it myself with build.sh
+        - Not sure
     validations:
       required: true
   - type: input
     id: swift
     attributes:
       label: Swift version
-      description: "Needed for build and installation problems. Run `swift --version`."
+      description: "Needed for build and installation problems. Run `swift --version`. For npm installation problems, add the output of `node --version` and `npm --version` too."
     validations:
       required: false
   - type: textarea
