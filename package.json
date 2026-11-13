@@ -1,0 +1,37 @@
+{
+  "name": "quickquit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A tiny native macOS utility that asks your open Dock apps to quit with Control+Shift+Q.",
+  "keywords": [
+    "macos",
+    "swift",
+    "productivity",
+    "keyboard-shortcut",
+    "quit",
+    "utility"
+  ],
+  "homepage": "https://github.com/choudharyjayesh668/QuickQuit#readme",
+  "bugs": {
+    "url": "https://github.com/choudharyjayesh668/QuickQuit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/choudharyjayesh668/QuickQuit.git"
+  },
+  "license": "MIT",
+  "author": "Jayesh Choudhary (https://github.com/choudharyjayesh668)",
+  "os": [
+    "darwin"
+  ],
+  "files": [
+    "Sources/",
+    "build.sh",
+    "Install QuickQuit.command",
+    "Uninstall QuickQuit.command"
+  ],
+  "scripts": {
+    "build": "./build.sh",
+    "test": "./test.sh"
+  }
+}

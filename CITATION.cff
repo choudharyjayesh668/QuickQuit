@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use QuickQuit in your work, please cite the project and credit its creator."
+type: software
+title: QuickQuit
+authors:
+  - family-names: Choudhary
+    given-names: Jayesh
+abstract: "A small native macOS utility that asks regular Dock apps to quit with a global keyboard shortcut."
+repository-code: "https://github.com/choudharyjayesh668/QuickQuit"
+url: "https://github.com/choudharyjayesh668/QuickQuit"
+license: MIT

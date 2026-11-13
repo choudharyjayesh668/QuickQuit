@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest an improvement to QuickQuit.
+title: "Feature: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. QuickQuit is deliberately small: it asks apps to quit normally and never force-quits them. Requests that keep it small and safe are the most likely to be accepted.
+
+        Please check the [existing issues](https://github.com/choudharyjayesh668/QuickQuit/issues?q=is%3Aissue) first.
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature description
+      description: A clear, short description of what you would like.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem it solves
+      description: What are you trying to do, and what makes it hard today?
+      placeholder: "I often need to ..., but QuickQuit currently ..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should it work from the user's point of view?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative solutions
+      description: Other approaches or workarounds you have considered.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, examples from other apps, or anything else that helps.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and this feature is not already requested.
+          required: true

@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint scripts and metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Check shell syntax
+        run: |
+          for script in build.sh test.sh "Install QuickQuit.command" "Uninstall QuickQuit.command"; do
+            bash -n "$script"
+          done
+      - name: Run ShellCheck
+        run: shellcheck build.sh test.sh "Install QuickQuit.command" "Uninstall QuickQuit.command"
+      - name: Check scripts are executable
+        run: |
+          for script in build.sh test.sh "Install QuickQuit.command" "Uninstall QuickQuit.command"; do
+            test -x "$script" || { echo "::error file=$script::$script is not executable"; exit 1; }
+          done
+      - name: Validate package.json and its file list
+        run: npm pack --dry-run
+
+  build:
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, macos-26]
+    env:
+      SWIFTFLAGS: -warnings-as-errors
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Show tool versions
+        run: |
+          sw_vers
+          uname -m
+          swift --version
+      - name: Run unit tests
+        run: ./test.sh
+      - name: Build QuickQuit
+        run: ./build.sh
+      - name: Validate app metadata and signature
+        run: |
+          plutil -lint build/QuickQuit.app/Contents/Info.plist
+          codesign --verify --deep --strict build/QuickQuit.app
+      - name: Check version and deployment target
+        run: |
+          expected="$(plutil -extract version raw -o - package.json)"
+          actual="$(plutil -extract CFBundleShortVersionString raw -o - build/QuickQuit.app/Contents/Info.plist)"
+          echo "package.json: $expected, Info.plist: $actual"
+          test "$expected" = "$actual"
+          vtool -show-build build/QuickQuit.app/Contents/MacOS/QuickQuit | tee build-version.txt
+          grep -Eq 'minos 13\.0$' build-version.txt

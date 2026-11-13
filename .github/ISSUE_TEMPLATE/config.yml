@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/choudharyjayesh668/QuickQuit/security/advisories/new
+    about: Please report security problems privately. Do not open a public issue.
+  - name: Installation and troubleshooting help
+    url: https://github.com/choudharyjayesh668/QuickQuit#troubleshooting
+    about: Check the README for common installation and usage problems first.

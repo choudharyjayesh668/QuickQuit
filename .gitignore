@@ -1,0 +1,26 @@
+# Generated app bundle and local build output
+build/
+DerivedData/
+.build/
+.swiftpm/
+
+# npm (QuickQuit has no npm dependencies; these guard against accidents)
+node_modules/
+npm-debug.log*
+*.tgz
+
+# macOS and editor files
+.DS_Store
+*.xcuserstate
+*.swp
+*~
+.idea/
+.vscode/
+
+# Signing material and local secrets must never be committed
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile
+.env
+.env.*
