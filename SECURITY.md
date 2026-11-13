@@ -41,9 +41,10 @@ Remove passwords and personal data from anything you attach.
 
 ## Scope
 
-In scope: the Swift source in `Sources/`, the build, install, and uninstall scripts, and the GitHub Actions workflow in this repository.
+In scope: the Swift source in `Sources/`, the build, install, and uninstall scripts, the `quickquit` command and the npm `postinstall` step, and the GitHub Actions workflow in this repository.
 
 Known characteristics that are not vulnerabilities:
 
 - QuickQuit is ad-hoc signed and is not Developer ID signed or notarized. This is documented in the [README](README.md#security-and-privacy).
+- The npm package runs a `postinstall` script that builds and installs the app on a global install. This is documented in the [README](README.md#what-installation-does) and can be turned off with `--ignore-scripts` or `QUICKQUIT_SKIP_POSTINSTALL=1`.
 - Any app running under the same user account can register the same keyboard shortcut first, or send quit requests to other apps. That is standard macOS behavior.

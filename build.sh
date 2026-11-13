@@ -1,5 +1,6 @@
 #!/bin/bash
-# Builds QuickQuit.app into ./build using only Apple Command Line Tools.
+# Builds QuickQuit.app using only Apple Command Line Tools.
+# Output goes to ./build, or to QUICKQUIT_BUILD_DIR if that is set.
 # Set SWIFTFLAGS to pass extra compiler flags (CI uses -warnings-as-errors).
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -8,8 +9,11 @@ if [ "$(uname -s)" != "Darwin" ]; then
     echo "QuickQuit only supports macOS." >&2
     exit 1
 fi
-if ! xcrun --find swiftc >/dev/null 2>&1; then
-    echo "The Swift compiler was not found. Install Apple Command Line Tools with:" >&2
+# xcode-select is checked first because it fails quietly when the tools are
+# missing; asking xcrun directly would pop up Apple's install dialog.
+if ! xcode-select -p >/dev/null 2>&1 || ! xcrun --find swiftc >/dev/null 2>&1; then
+    echo "Apple Command Line Tools (the Swift compiler) were not found." >&2
+    echo "Install them, then try again:" >&2
     echo "    xcode-select --install" >&2
     exit 1
 fi
@@ -18,15 +22,23 @@ fi
 VERSION="$(plutil -extract version raw -o - package.json)"
 MIN_MACOS="13.0"
 
-APP="build/QuickQuit.app"
+BUILD_DIR="${QUICKQUIT_BUILD_DIR:-build}"
+APP="$BUILD_DIR/QuickQuit.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
 
 # The deployment target makes the compiler check that every API used exists on
 # the oldest supported macOS, and keeps the binary in line with Info.plist.
 # shellcheck disable=SC2086  # SWIFTFLAGS is intentionally split into words
-swiftc -O -swift-version 6 -target "$(uname -m)-apple-macos$MIN_MACOS" ${SWIFTFLAGS:-} \
-    Sources/*.swift -o "$APP/Contents/MacOS/QuickQuit"
+if ! swiftc -O -swift-version 6 -target "$(uname -m)-apple-macos$MIN_MACOS" ${SWIFTFLAGS:-} \
+    Sources/*.swift -o "$APP/Contents/MacOS/QuickQuit"; then
+    echo >&2
+    echo "The build failed. QuickQuit needs a Swift 6 compiler; this Mac has:" >&2
+    swiftc --version 2>&1 | head -n 1 >&2
+    echo "If that is older than Swift 6, update Apple Command Line Tools in" >&2
+    echo "System Settings → General → Software Update." >&2
+    exit 1
+fi
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -49,4 +61,7 @@ PLIST
 
 # Ad-hoc signature so macOS accepts the locally built app.
 codesign --force --sign - "$APP"
-echo "Built $(pwd)/$APP (version $VERSION)"
+case "$APP" in
+    /*) echo "Built $APP (version $VERSION)" ;;
+    *)  echo "Built $(pwd)/$APP (version $VERSION)" ;;
+esac
