@@ -20,12 +20,19 @@ MIN_MACOS="13.0"
 
 APP="build/QuickQuit.app"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "build/QuickQuit.iconset"
+
+# Build the standard multi-resolution macOS icon from the supplied source PNG.
+for SIZE in 16 32 64 128 256 512 1024; do
+    sips -s format png -z "$SIZE" "$SIZE" QuickQuit.png --out "build/QuickQuit.iconset/icon_${SIZE}x${SIZE}.png" >/dev/null
+done
+swift -module-cache-path "build/ModuleCache" Tools/create-icns.swift "build/QuickQuit.iconset" "$APP/Contents/Resources/QuickQuit.icns"
+rm -rf "build/QuickQuit.iconset"
 
 # The deployment target makes the compiler check that every API used exists on
 # the oldest supported macOS, and keeps the binary in line with Info.plist.
 # shellcheck disable=SC2086  # SWIFTFLAGS is intentionally split into words
-swiftc -O -swift-version 6 -target "$(uname -m)-apple-macos$MIN_MACOS" ${SWIFTFLAGS:-} \
+swiftc -O -swift-version 6 -module-cache-path "build/ModuleCache" -target "$(uname -m)-apple-macos$MIN_MACOS" ${SWIFTFLAGS:-} \
     Sources/*.swift -o "$APP/Contents/MacOS/QuickQuit"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
@@ -40,6 +47,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>$VERSION</string>
     <key>CFBundleVersion</key><string>$VERSION</string>
+    <key>CFBundleIconFile</key><string>QuickQuit</string>
     <key>LSMinimumSystemVersion</key><string>$MIN_MACOS</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>NSHighResolutionCapable</key><true/>
