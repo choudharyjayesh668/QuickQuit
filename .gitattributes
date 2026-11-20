@@ -4,6 +4,7 @@
 *.sh       text eol=lf
 *.command  text eol=lf
 *.swift    text eol=lf diff=swift
+*.js       text eol=lf
 *.md       text eol=lf diff=markdown
 *.yml      text eol=lf
 *.json     text eol=lf

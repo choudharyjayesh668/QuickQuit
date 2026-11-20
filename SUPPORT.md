@@ -20,6 +20,7 @@
 
 - Your macOS version (`sw_vers`) and Swift version (`swift --version`).
 - The QuickQuit version: `defaults read /Applications/QuickQuit.app/Contents/Info CFBundleShortVersionString`.
+- How you installed it (npm or **Install QuickQuit.command**). For npm, include the output of `quickquit status`, `node --version`, and `npm --version`.
 - What you expected, what happened, and the exact text of any error message.
 
 Do not include passwords, personal documents, or other sensitive information.
