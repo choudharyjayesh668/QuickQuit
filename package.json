@@ -1,6 +1,6 @@
 {
   "name": "quickquit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A tiny native macOS utility that asks your open Dock apps to quit with Control+Shift+Q. Never force-quits.",
   "keywords": [
     "macos",
@@ -34,6 +34,8 @@
     "lib/",
     "scripts/",
     "Sources/",
+    "Tools/",
+    "QuickQuit.png",
     "build.sh"
   ],
   "scripts": {
